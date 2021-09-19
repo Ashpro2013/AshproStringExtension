@@ -8,6 +8,9 @@
     <Authors>Mohammed Ashraf</Authors>
     <Description>AshproStringExtension.IO is a string extension tool</Description>
     <Copyright>Copyright 2021 Mohammed AShraf</Copyright>
+    <RepositoryUrl>https://github.com/Ashpro2013/AshproStringExtension.git</RepositoryUrl>
+    <PackageTags>String Extensions</PackageTags>
+    <PackageReleaseNotes>A string extension library</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
