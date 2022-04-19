@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
-
 namespace AshproStringExtension
 {
     public static class StringExtension
@@ -198,6 +198,24 @@ namespace AshproStringExtension
         {
             return Convert.ToDecimal(obj);
         }
+        public static Decimal toDecimal(this object _obj)
+        {
+            try
+            {
+                if (_obj != null)
+                {
+                    return _obj.ToString().ToDecimal();
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
         public static Decimal Round(this decimal? obj, int NoofDecimals)
         {
             return Math.Round(obj.ToDecimal(), NoofDecimals);
@@ -206,7 +224,7 @@ namespace AshproStringExtension
         {
             return (obj.ToDecimal()).ToString(sFormat);
         }
-        public static string GetDate(DateTime dateTime)
+        public static string GetDateAndTime(DateTime dateTime)
         {
             try
             {
@@ -411,6 +429,255 @@ namespace AshproStringExtension
                 sw.Write(sw.NewLine);
             }
             sw.Close();
+        }
+        public static List<string> GetProperties(this object myObject)
+        {
+            List<string> list = new List<string>();
+            Type type = myObject.GetType();
+            PropertyInfo[] props = type.GetProperties();
+            foreach (var prop in props)
+            {
+                try
+                {
+                    if (!list.Contains(prop.Name))
+                        list.Add(prop.Name);
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+            return list;
+        }
+        public static string FirstLetterToUpperCase(this string inputString)
+        {
+            //First we changing the input string to lower
+            inputString = inputString.ToLower().Trim();
+            if (inputString.Length > 0)
+            {
+                char[] charArray = inputString.ToCharArray();
+                //This make first letter of string to upper
+                charArray[0] = char.ToUpper(charArray[0]);
+                //Following code make letter coming after space to Upper case Like Ashpro Technologies
+                for (int i = 0; i < charArray.Length; i++)
+                {
+                    if (charArray[i].ToString() == " ")
+                    {
+                        charArray[i + 1] = char.ToUpper(charArray[i + 1]);
+                    }
+                }
+                return new string(charArray);
+            }
+            return inputString;
+        }
+        public static string GetTime(this DateTime dateTime)
+        {
+            try
+            {
+                return dateTime.ToString("HH:mm:ss");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public static string GetDate(this DateTime dateTime)
+        {
+            try
+            {
+                System.Globalization.CultureInfo enCul = new System.Globalization.CultureInfo("en-US");
+                string sVal = dateTime.ToString("dd-MM-yyyy", enCul);
+                return sVal;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public static System.Data.DataTable ListToDataTable<T>(this List<T> items)
+        {
+            System.Data.DataTable dataTable = new System.Data.DataTable(typeof(T).Name);
+            //Get all the properties by using reflection   
+            PropertyInfo[] Props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (PropertyInfo prop in Props)
+            {
+                //Setting column names as Property names  
+                dataTable.Columns.Add(prop.Name);
+            }
+            foreach (T item in items)
+            {
+                var values = new object[Props.Length];
+                for (int i = 0; i < Props.Length; i++)
+                {
+                    if (Props[i].PropertyType.Name == "Decimal")
+                    {
+                        values[i] = Props[i].GetValue(item, null).toDecimal().ToString().ToDecimal();
+                    }
+                    else if (Props[i].PropertyType.Name == "Byte[]")
+                    {
+                        if (Props[i].GetValue(item, null) != null)
+                        {
+                            values[i] = (byte[])Props[i].GetValue(item, null);
+                        }
+                        else
+                        {
+                            values[i] = null;
+                        }
+                    }
+                    else
+                    {
+                        values[i] = Props[i].GetValue(item, null);
+                    }
+                }
+                dataTable.Rows.Add(values);
+            }
+            return dataTable;
+        }
+        public static System.Data.DataTable ToDataTable<T>(this T item)
+        {
+            System.Data.DataTable dataTable = new System.Data.DataTable(typeof(T).Name);
+            //Get all the properties by using reflection   
+            PropertyInfo[] Props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (PropertyInfo prop in Props)
+            {
+                //Setting column names as Property names  
+                dataTable.Columns.Add(prop.Name);
+            }
+            var values = new object[Props.Length];
+            for (int i = 0; i < Props.Length; i++)
+            {
+                if (Props[i].PropertyType.Name == "Decimal")
+                {
+                    values[i] = Props[i].GetValue(item, null).toDecimal().ToString();
+                }
+                else
+                {
+                    values[i] = Props[i].GetValue(item, null);
+                }
+            }
+            dataTable.Rows.Add(values);
+            return dataTable;
+        }
+        public static List<T> DataTableToList<T>(this System.Data.DataTable data)
+        {
+            List<T> list = new List<T>();
+            Type temp = typeof(T);
+            T obj = Activator.CreateInstance<T>();
+            foreach (DataRow row in data.Rows)
+            {
+                obj = GetTItem<T>(row);
+                list.Add(obj);
+            }
+            return list;
+        }
+        public static T GetTItem<T>(this DataRow dr)
+        {
+            try
+            {
+                Type temp = typeof(T);
+                T obj = Activator.CreateInstance<T>();
+                foreach (DataColumn column in dr.Table.Columns)
+                {
+                    foreach (PropertyInfo pro in temp.GetProperties())
+                    {
+                        if (pro.Name == column.ColumnName)
+
+                            if (dr[column.ColumnName] != DBNull.Value)
+                            {
+                                if (pro.PropertyType.Name == "Boolean")
+                                {
+                                    if (dr[column.ColumnName].ToString() != string.Empty)
+                                        pro.SetValue(obj, dr[column.ColumnName].ToString().ToBool(), null);
+                                }
+                                else if (pro.PropertyType.Name == "Int32")
+                                {
+                                    if (dr[column.ColumnName].ToString() != string.Empty)
+                                    {
+                                        pro.SetValue(obj, dr[column.ColumnName].ToInt32(), null);
+                                    }
+                                }
+                                else if (pro.PropertyType.Name == "Decimal")
+                                {
+                                    if (dr[column.ColumnName].ToString() != string.Empty)
+                                        pro.SetValue(obj, dr[column.ColumnName].toDecimal(), null);
+                                }
+                                else if (pro.PropertyType.Name == "Nullable`1")
+                                {
+                                    if (pro.PropertyType.FullName.Contains("System.Int32"))
+                                    {
+                                        if (dr[column.ColumnName].ToString() != string.Empty)
+                                        {
+                                            pro.SetValue(obj, dr[column.ColumnName].ToInt32(), null);
+                                        }
+                                    }
+                                    else if (pro.PropertyType.FullName.Contains("System.Boolean"))
+                                    {
+                                        if (dr[column.ColumnName].ToString() != string.Empty)
+                                        {
+                                            pro.SetValue(obj, dr[column.ColumnName].ToString().ToBool(), null);
+                                        }
+                                    }
+                                    else if (pro.PropertyType.FullName.Contains("System.DateTime"))
+                                    {
+                                        if (dr[column.ColumnName].ToString() != string.Empty)
+                                        {
+                                            pro.SetValue(obj, Convert.ToDateTime(dr[column.ColumnName].ToString()), null);
+                                        }
+                                    }
+                                    else if (pro.PropertyType.FullName.Contains("System.Decimal"))
+                                    {
+                                        if (dr[column.ColumnName].ToString() != string.Empty)
+                                        {
+                                            pro.SetValue(obj, dr[column.ColumnName].toDecimal(), null);
+                                        }
+                                    }
+                                }
+                                else if (pro.PropertyType.Name == "DateTime")
+                                {
+                                    if (dr[column.ColumnName].ToString() != string.Empty)
+                                        pro.SetValue(obj, Convert.ToDateTime(dr[column.ColumnName].ToString()), null);
+                                }
+                                else
+                                {
+                                    pro.SetValue(obj, dr[column.ColumnName].ToString(), null);
+                                }
+                            }
+                            else
+                            {
+                                pro.SetValue(obj, null, null);
+                            }
+                        else
+                            continue;
+                    }
+                }
+                return obj;
+
+            }
+            catch (Exception ex)
+            {
+                string s = ex.Message;
+                throw;
+            }
+        }
+        public static void DataTabletoFile(this System.Data.DataTable datatable, string file)
+        {
+            StreamWriter str = new StreamWriter(file, true, System.Text.Encoding.Unicode);
+            string Columns = string.Empty;
+            foreach (DataColumn column in datatable.Columns)
+            {
+                Columns += column.ColumnName;
+            }
+            str.WriteLine(Columns.Remove(Columns.Length - 1, 1));
+            foreach (DataRow datarow in datatable.Rows)
+            {
+                string row = string.Empty;
+                foreach (object items in datarow.ItemArray)
+                {
+                    row += items.ToString();
+                }
+                str.WriteLine(row.Remove(row.Length - 1, 1), 0);
+            }
+            str.Close();
         }
     }
 }
