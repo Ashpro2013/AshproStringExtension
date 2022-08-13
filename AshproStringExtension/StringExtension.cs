@@ -125,21 +125,63 @@ namespace AshproStringExtension
                 return 0;
             }
         }
-        public static DateTime toDateTime(this String Obj)
+        public static DateTime toDateTime(this String Obj, IFormatProvider provider = null)
         {
+            DateTime dt = DateTime.Now;
+            if (provider == null)
+            {
+                System.Globalization.CultureInfo enCul = new System.Globalization.CultureInfo("en-US");
+                provider = enCul;
+            }
             try
             {
-                return Convert.ToDateTime(Obj);
+                dt = DateTime.ParseExact(Obj, "yyyy-MM-ddTHH:mm:ss", provider);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                try
+                {
+                    if (Obj.Contains("-"))
+                    {
+                        if (Obj.Length > 10)
+                        {
+                            int iIndex = Obj.IndexOf("T");
+                            Obj = Obj.Remove(iIndex);
+                        }
+                        string[] sString = Obj.Split('-');
+                        toDateTime(sString[2] + "-" + sString[1] + "-" + sString[0] + "T00:00:00", provider);
+                    }
+                    else if (Obj.Contains("/") && Obj.Length == 10)
+                    {
+                        string[] sString = Obj.Split('/');
+                        string val = sString[2].Trim() + "-" + sString[1].Trim() + "-" + sString[0].Trim() + "T00:00:00";
+                        toDateTime(val, provider);
+                    }
+                    else
+                    {
+                        dt = Convert.ToDateTime(Obj);
+                    }
+                }
+                catch (Exception)
+                {
+                    dt = DateTime.Now;
+                }
             }
+            return dt;
         }
-        public static DateTime ToDateTime(this DateTime? Obj)
+        public static DateTime ToDateTime(this DateTime? Obj, IFormatProvider provider = null)
         {
-            if (Obj == null) { return DateTime.Now; }
-            return (DateTime)Obj;
+            if (provider == null)
+            {
+                System.Globalization.CultureInfo enCul = new System.Globalization.CultureInfo("en-US");
+                provider = enCul;
+            }
+            string sDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+            if (Obj != null)
+            {
+                sDate = ((DateTime)Obj).ToString("yyyy-MM-ddTHH:mm:ss");
+            }
+            return sDate.toDateTime();
         }
         public static bool isNumeric(this Object Expression)
         {
@@ -189,6 +231,17 @@ namespace AshproStringExtension
                 return 0;
             }
 
+        }
+        public static int? ToIntiger(this Object _obj)
+        {
+            if (_obj != null)
+            {
+                return _obj.ToString().ToInt32();
+            }
+            else
+            {
+                return null;
+            }
         }
         public static Decimal ToDecimal(this decimal? obj)
         {
