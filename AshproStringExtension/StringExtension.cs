@@ -88,6 +88,19 @@ namespace AshproStringExtension
                 return 0;
             }
         }
+        public static Decimal? ToDecimal2(this object obj) {
+            try {
+                if (obj != null) {
+                    return obj.ToString().ToDecimal();
+                }
+                else {
+                    return null;
+                }
+            }
+            catch (Exception) {
+                return null;
+            }
+        }
         public static double ToDouble(this Decimal? obj)
         {
             return Convert.ToDouble(obj);
@@ -135,7 +148,16 @@ namespace AshproStringExtension
             }
             try
             {
-                dt = DateTime.ParseExact(Obj, "yyyy-MM-ddTHH:mm:ss", provider);
+                try
+                {
+                    dt = Convert.ToDateTime(Obj,provider);
+                }
+                catch (Exception)
+                {
+
+                    dt = DateTime.ParseExact(Obj, "yyyy-MM-ddTHH:mm:ss", provider);
+                }
+               
             }
             catch (Exception)
             {
@@ -164,7 +186,7 @@ namespace AshproStringExtension
                 }
                 catch (Exception)
                 {
-                    dt = DateTime.Now;
+                    dt = Convert.ToDateTime(Obj);
                 }
             }
             return dt;
